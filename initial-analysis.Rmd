@@ -1,0 +1,42 @@
+---
+title: "initial-analysis"
+author: "Keith Hultman"
+date: "June 8, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reproduce David Robinson's code
+
+```{r}
+library(dplyr)
+library(purrr)
+library(twitteR)
+source("twitterauth.R")
+```
+
+```{r}
+# You'd need to set global options with an authenticated app
+setup_twitter_oauth(twitter_consumer_key,
+                    twitter_consumer_secret,
+                    twitter_access_token,
+                    twitter_access_token_secret)
+
+# We can request only 3200 tweets at a time; it will return fewer
+# depending on the API
+trump_tweets <- userTimeline("realDonaldTrump", n = 3200)
+trump_tweets_df <- tbl_df(map_df(trump_tweets, as.data.frame))
+```
+
+```{r}
+library(tidyr)
+
+tweets <- trump_tweets_df %>%
+  select(id, statusSource, text, created) %>%
+  extract(statusSource, "source", "Twitter for (.*?)<") %>%
+  filter(source %in% c("iPhone", "Android"))
+```
+
