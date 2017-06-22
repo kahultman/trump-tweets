@@ -71,7 +71,9 @@ nrc <- sentiments %>%
   dplyr::select(word, sentiment)
 
 unique(nrc$sentiment)
-spread(nrc, sentiment)
+
+nrc_dummy <- dummyVars(~sentiment, data = nrc, sep = ".", levelsOnly = TRUE)
+nrc_dummy <- as.data.frame(predict(nrc_dummy, newdata = nrc))
 ```
 
 ```{r}
