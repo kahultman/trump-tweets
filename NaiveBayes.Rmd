@@ -57,6 +57,21 @@ tweet_words <- tweets %>%
   mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) 
 
 
+library(stringr)
+tweet_words2 <- tweets %>% 
+  mutate(quote = ifelse(str_detect(text, '^"'), "Yes", "No")) %>% 
+  mutate(text = ifelse(str_detect(text, '^"'), "", text)) %>% 
+  mutate(picture = ifelse(str_detect(text, "t.co"), "Yes", "No")) %>% 
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>% 
+  mutate(hashtag = ifelse(str_detect(text, "#"), "Yes", "No"))
+
+
+nrc <- sentiments %>%
+  filter(lexicon == "nrc") %>%
+  dplyr::select(word, sentiment)
+
+unique(nrc$sentiment)
+spread(nrc, sentiment)
 ```
 
 ```{r}
