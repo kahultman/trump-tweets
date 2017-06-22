@@ -1,0 +1,147 @@
+---
+title: "Naive Bayes on Trump Tweets"
+output: html_notebook
+---
+
+Load the original Trump tweet data set produced by David Robinson. 
+
+```{r}
+library(tidyverse)
+
+load(url("http://varianceexplained.org/files/trump_tweets_df.rda"))
+
+tweets <- trump_tweets_df %>%
+  select(id, statusSource, text, created) %>%
+  extract(statusSource, "source", "Twitter for (.*?)<") %>%
+  filter(source %in% c("iPhone", "Android")) %>% 
+  mutate(trump = as.factor(if_else(source == "Android", true = "trump", false = "not trump")))
+```
+
+If we assume that David's conclusion is correct, that Trump personally tweets from his Android phone, what is the proportion of trump vs not trump in our data set?
+
+
+```{r}
+table(tweets$trump)
+```
+
+```{r}
+library(lubridate)
+library(scales)
+
+tweets %>%
+  count(source, month = month(created)) %>%
+  mutate(percent = n / sum(n)) %>%
+  ggplot(aes(month, percent, color = source)) +
+  geom_line() +
+  scale_y_continuous(labels = percent_format()) +
+  labs(x = "Month (EST)",
+       y = "% of tweets",
+       color = "")
+```
+
+
+These are the following features that were different between Android and non-Android that will be used to build the model
+
+* Contain quotes (trump)
+* Contain image or url (non trump)
+* Time of day
+* Sentiment
+
+
+```{r}
+library(tidytext)
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+tweet_words <- tweets %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) 
+
+
+```
+
+```{r}
+library(tm)
+library(SnowballC)
+
+tweet_corpus <- VCorpus(VectorSource(tweet_words$text))
+tweet_corpus
+
+tweet_corpus_clean <- tm_map(tweet_corpus, content_transformer(tolower)) %>% 
+  tm_map(removeNumbers) %>% 
+  tm_map(removeWords, stopwords()) %>% 
+  tm_map(removePunctuation) %>% 
+  tm_map(stemDocument) %>% 
+  tm_map(stripWhitespace)
+
+```
+```{r}
+tweet_dtm <- DocumentTermMatrix(tweet_corpus_clean)
+```
+
+```{r}
+library(caret)
+
+set.seed(145)
+training <- createDataPartition(tweet_words$trump, times = 1, p = 0.8, list = FALSE)
+
+tweet_words_train <- tweet_words[training,]
+tweet_words_test <- tweet_words[-training,]
+tweet_dtm_train <- tweet_dtm[training,]
+tweet_dtm_test <- tweet_dtm[-training,]
+```
+
+```{r}
+prop.table(table(tweet_words_train$trump))
+prop.table(table(tweet_words_test$trump))
+```
+
+### Filter out infrequent words
+
+
+
+```{r}
+tweet_freq_words <- findFreqTerms(tweet_dtm_train, lowfreq = 5)
+tweet_dtm_train <- tweet_dtm_train[, tweet_freq_words]
+tweet_dtm_test <- tweet_dtm_test[,tweet_freq_words]
+```
+
+### Convert matrix from numerical to categorical
+
+```{r}
+convert_counts <- function(x){
+  x <- ifelse(x > 0, "Yes", "No")
+}
+
+tweet_train <- apply(tweet_dtm_train, MARGIN = 2, convert_counts)
+tweet_test <- apply(tweet_dtm_test, MARGIN = 2, convert_counts)
+```
+
+### Apply Naive Bayes Model
+
+```{r}
+library(e1071)
+tweet_nb <- naiveBayes(tweet_train, tweet_words_train$trump, laplace = 0)
+```
+
+### Make predictions on the test set and evaluate performance
+
+```{r}
+tweet_pred <- predict(tweet_nb, tweet_test)
+
+nb_cm <- confusionMatrix(tweet_pred, tweet_words_test$trump, positive = "trump")
+nb_cm
+```
+
+Our accuracy is `r round(nb_cm$overall[[1]], 3)` just by using the common words used by trump compared to his aides and campaign staff. 
+
+### Include additional features
+
+Naive Bayes is a flexible model that will allow us to include dense features in addition to the sparse matrix that is used in our bag of words. 
+
+
+```{r}
+
+```
+
+
+
