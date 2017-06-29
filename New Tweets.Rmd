@@ -1,0 +1,96 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Look at new tweets
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(purrr)
+library(twitteR)
+source("twitterauth.R")
+```
+
+
+Look at new tweets
+
+```{r}
+
+load("trump_tweets_new_df.Rda")
+
+new_tweets <- trump_tweets_new_df %>%
+  select(id, statusSource, text, created) %>%
+  extract(statusSource, "source", "Twitter for (.*?)<") %>%
+  filter(source %in% c("iPhone", "Android"))
+```
+
+```{r}
+ggplot(new_tweets, aes(created, source)) + geom_point()
+```
+```{r}
+load("trump_tweets_df.Rda")
+old_tweets <- trump_tweets_df %>%
+  select(id, statusSource, text, created) %>%
+  extract(statusSource, "source", "Twitter for (.*?)<") %>%
+  filter(source %in% c("iPhone", "Android"))
+
+tweets <- rbind(new_tweets, old_tweets)
+ggplot(tweets, aes(created, source)) + geom_point()
+```
+
+There are some missing tweets using the API. 
+
+```{r}
+setup_twitter_oauth(twitter_consumer_key,
+                    twitter_consumer_secret,
+                    twitter_access_token,
+                    twitter_access_token_secret)
+
+missing_tweets <- userTimeline("realDonaldTrump", n = 3200, maxID = "797812048805695488")
+missing_tweets_df <- tbl_df(map_df(missing_tweets, as.data.frame))
+
+more_missing <- userTimeline("realDonaldTrump", n = 3200, maxID = "764053208394182656")
+more_missing_df <- tbl_df(map_df(more_missing, as.data.frame))
+
+missing_tweets_df <- rbind(missing_tweets_df, more_missing_df)
+
+missing_tweets <- missing_tweets_df %>%
+  select(id, statusSource, text, created) %>%
+  extract(statusSource, "source", "Twitter for (.*?)<") %>%
+  filter(source %in% c("iPhone", "Android"))
+
+alltweets <- rbind(tweets, missing_tweets) 
+alltweets <- alltweets[!duplicated(alltweets$id),]
+
+save(alltweets, file = "alltweets.Rda")
+```
+
+```{r}
+load("alltweets.Rda")
+
+ggplot(alltweets, aes(created, source)) + geom_jitter()
+```
+```{r}
+library(stringr)
+
+alltweets2 <- alltweets %>% 
+  mutate(quote = ifelse(str_detect(text, '^"'), TRUE, FALSE)) %>% 
+  mutate(text = ifelse(str_detect(text, '^"'), "", text)) %>% 
+  mutate(picture = ifelse(str_detect(text, "t.co"), TRUE, FALSE)) %>% 
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>% 
+  mutate(hashtag = ifelse(str_detect(text, "#"), TRUE, FALSE))
+```
+
+```{r}
+ggplot(alltweets2, aes(created, source)) + geom_jitter(aes(color = hashtag))
+ggplot(alltweets2, aes(created, source)) + geom_jitter(aes(color = picture)) 
+ggplot(alltweets2, aes(created, source)) + geom_jitter(aes(color = (picture | hashtag)))
+```
+
+

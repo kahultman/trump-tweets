@@ -28,13 +28,17 @@ setup_twitter_oauth(twitter_consumer_key,
 # We can request only 3200 tweets at a time; it will return fewer
 # depending on the API
 trump_tweets_new <- userTimeline("realDonaldTrump", n = 3200)
+
 trump_tweets_new_df <- tbl_df(map_df(trump_tweets_new, as.data.frame))
+
+save(trump_tweets_new_df, file = "trump_tweets_new_df.Rda")
 ```
 
 # Original dataset
 
 ```{r}
 load(url("http://varianceexplained.org/files/trump_tweets_df.rda"))
+save(trump_tweets_df, file = "trump_tweets_df.Rda")
 ```
 
 
