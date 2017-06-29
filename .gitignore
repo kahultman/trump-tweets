@@ -1,8 +1,9 @@
 .Rproj.user
 .Rhistory
 .RData
-.Rdata
-.Rda
+*.Rdata
+*.Rda
+*.RData
 .Ruserdata
 .httr-oauth
 twitterauth.R
