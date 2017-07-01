@@ -78,13 +78,20 @@ ggplot(alltweets, aes(created, source)) + geom_jitter()
 ```
 ```{r}
 library(stringr)
+library(lubridate)
 
 alltweets2 <- alltweets %>% 
   mutate(quote = ifelse(str_detect(text, '^"'), TRUE, FALSE)) %>% 
   mutate(text = ifelse(str_detect(text, '^"'), "", text)) %>% 
   mutate(picture = ifelse(str_detect(text, "t.co"), TRUE, FALSE)) %>% 
   mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>% 
-  mutate(hashtag = ifelse(str_detect(text, "#"), TRUE, FALSE))
+  mutate(hashtag = ifelse(str_detect(text, "#"), TRUE, FALSE)) %>% 
+  mutate(date.time = ymd_hms(created, tz = "EST")) %>% 
+  mutate(dow = wday(date.time, label = TRUE)) %>% 
+  mutate(tod = hour(with_tz(created, tzone = "EST")))
+
+
+
 ```
 
 ```{r}
@@ -93,4 +100,26 @@ ggplot(alltweets2, aes(created, source)) + geom_jitter(aes(color = picture))
 ggplot(alltweets2, aes(created, source)) + geom_jitter(aes(color = (picture | hashtag)))
 ```
 
+```{r}
+alltweets2 %>% group_by(tod, source) %>% 
+  summarise(count = n()) %>% 
+  ggplot(aes(tod, count)) + geom_line(aes(color = source))
+
+```
+
+```{r}
+library(tidytext)
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+tweet_words <- alltweets2 %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]"))
+
+tweet_words
+
+
+```
 

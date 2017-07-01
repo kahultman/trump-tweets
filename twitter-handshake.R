@@ -15,6 +15,7 @@ my_oauth <- OAuthFactory$new(consumerKey = twitter_consumer_key,
 
 my_oauth$handshake(cainfo = system.file("CurlSSL", "cacert.pem", package = "RCurl"))
 
+
 ### STOP HERE!!! ###
 
 # PART 2: Save the my_oauth data to an .Rdata file
