@@ -65,7 +65,7 @@ missing_tweets <- missing_tweets_df %>%
   extract(statusSource, "source", "Twitter for (.*?)<") %>%
   filter(source %in% c("iPhone", "Android"))
 
-alltweets <- rbind(tweets, missing_tweets) 
+alltweets <- rbind(trump_tweets_df, missing_tweets) 
 alltweets <- alltweets[!duplicated(alltweets$id),]
 
 save(alltweets, file = "alltweets.Rda")
