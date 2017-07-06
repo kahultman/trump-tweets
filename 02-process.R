@@ -19,19 +19,47 @@ alltweets2 <- alltweets %>%
 
 
 
+
+# Sentiment data
 library(tidytext)
 library(caret)
 
-reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+#reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
 tweet_words <- alltweets2 %>%
-  filter(!str_detect(text, '^"')) %>%
-  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) 
+  filter(!quote) 
 
 nrc <- sentiments %>%
   filter(lexicon == "nrc") %>%
   dplyr::select(word, sentiment)
 
-unique(nrc$sentiment)
 
 nrc_dummy <- dummyVars(~sentiment, data = nrc, sep = ".", levelsOnly = TRUE)
 nrc_dummy <- as.data.frame(predict(nrc_dummy, newdata = nrc))
+nrc_dummy$word <- nrc$word 
+
+
+# Tidy the tweets - one word per line
+tidy_tweet <- tweet_words %>% unnest_tokens(output = word, input = text, token = "words")
+tidy_tweet <- inner_join(tidy_tweet, nrc_dummy)
+
+# Aggregate sentiment scores per tweet
+tweet_sentiment <- tidy_tweet %>% group_by(id) %>% 
+  summarise_each(funs(max),starts_with("sentiment"))
+
+# combine sentiment scores with full data set
+alltweets2 <- left_join(alltweets2, tweet_sentiment, by = "id")
+alltweets2[is.na(alltweets2)] <- 0
+
+
+# Break into train/test and new data
+train_tweet <- alltweets2 %>% 
+  filter(date.time < "2017-03-01") %>% 
+  mutate(trump = as.factor(if_else(source == "Android", true = "trump", false = "not trump"))) %>% 
+  select(-id, -source, -text, -created, -date.time)
+
+set.seed(145)
+in_training <- createDataPartition(train_tweet$trump, times = 1, p = 0.8, list = FALSE)
+tweet_test <- train_tweet[-in_training,]
+tweet_train <- train_tweet[in_training,]
+
+
