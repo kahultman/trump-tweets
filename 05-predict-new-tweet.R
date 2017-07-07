@@ -82,6 +82,10 @@ if(nrow(new_trump_tweet)>0) {
   # Really hate using a loop, but not sure how to execute the function otherwise
   replytweets <- new_trump_sentiment %>% 
       filter(prediction == "trump") 
+  
+  print("Breakdown of new tweet predictions")
+  table(new_trump_sentiment$prediction)
+  
   if(nrow(replytweets) > 0){
     for(n in 1:nrow(replytweets)){
       updateStatus(text = get_response(), inReplyTo = replytweets$id[n])
@@ -91,6 +95,9 @@ if(nrow(new_trump_tweet)>0) {
   #save new tweets to file
   trump_tweets <- rbind(trump_tweets, new_trump_sentiment)  
   save(trump_tweets, file = "trump_tweets.RData")
+
+} else {
+  print("There were no new tweets")
 }
 
 
