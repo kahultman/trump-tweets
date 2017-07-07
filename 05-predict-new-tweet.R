@@ -84,7 +84,7 @@ if(nrow(new_trump_tweet)>0) {
       filter(prediction == "trump") 
   
   print("Breakdown of new tweet predictions")
-  table(new_trump_sentiment$prediction)
+  print(table(new_trump_sentiment$prediction))
   
   if(nrow(replytweets) > 0){
     for(n in 1:nrow(replytweets)){
