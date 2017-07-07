@@ -8,3 +8,5 @@
 .httr-oauth
 twitterauth.R
 *.html
+*.Rds
+*.json
