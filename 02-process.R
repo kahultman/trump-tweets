@@ -2,7 +2,6 @@
 
 load("alltweets.Rda")
 
-
 library(stringr)
 library(lubridate)
 library(tidyverse)
@@ -17,21 +16,16 @@ alltweets2 <- alltweets %>%
   mutate(dow = wday(date.time, label = TRUE)) %>% 
   mutate(tod = hour(with_tz(created, tzone = "EST")))
 
-
-
-
 # Sentiment data
 library(tidytext)
 library(caret)
 
-#reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
 tweet_words <- alltweets2 %>%
   filter(!quote) 
 
 nrc <- sentiments %>%
   filter(lexicon == "nrc") %>%
   dplyr::select(word, sentiment)
-
 
 nrc_dummy <- dummyVars(~sentiment, data = nrc, sep = ".", levelsOnly = TRUE)
 nrc_dummy <- as.data.frame(predict(nrc_dummy, newdata = nrc))
@@ -48,13 +42,25 @@ tweet_sentiment <- tidy_tweet %>% group_by(id) %>%
   summarise_each(funs(max),starts_with("sentiment"))
 
 # combine sentiment scores with full data set
-alltweets2 <- left_join(alltweets2, tweet_sentiment, by = "id")
+alltweets2 <- left_join(alltweets2, tweet_sentiment, by = "id") 
 alltweets2[is.na(alltweets2)] <- 0
 
-
 # Break into train/test and new data
+# Exclude tweets after March 8, 2017
+# shared <- alltweets2 %>% 
+#   filter(date.time < "2017-03-08") %>% 
+#   mutate(trump = as.factor(if_else(source == "Android", true = "trump", false = "not trump"))) %>% 
+#   select(-source, -created)
+# 
+# write_csv(shared, "trump-tweets-processed.csv")
+
+future <- alltweets2 %>% 
+  filter(date.time > "2017-03-08") %>% 
+  select(-source, -created)
+save(future, file = "future.Rdata")
+
 train_tweet <- alltweets2 %>% 
-  filter(date.time < "2017-03-01") %>% 
+  filter(date.time < "2017-03-08") %>% 
   mutate(trump = as.factor(if_else(source == "Android", true = "trump", false = "not trump"))) %>% 
   select(-source, -created, -date.time)
 
@@ -78,9 +84,12 @@ tweet_dtm <- tweet_dtm[, tweet_freq_words]
 
 # Split into training and test sets
 
-set.seed(145)
+set.seed(45)
 in_training <- createDataPartition(train_tweet$trump, times = 1, p = 0.8, list = FALSE)
 tweet_test <- train_tweet[-in_training,] 
 tweet_train <- train_tweet[in_training,] 
 tweet_dtm_test <- tweet_dtm[-in_training,]
 tweet_dtm_train <- tweet_dtm[in_training,]
+
+save(tweet_train, file = "tweet_train.Rdata")
+save(tweet_test, file = "tweet_test.Rdata")

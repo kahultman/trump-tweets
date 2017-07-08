@@ -76,6 +76,20 @@ load("alltweets.Rda")
 
 ggplot(alltweets, aes(created, source)) + geom_jitter()
 ```
+
+It looks like there were a few weeks where Trump was taking a break from Twitter, and that the Android usage stopped around March
+
+```{r}
+alltweets %>% filter(source == "Android") %>% top_n(5, created)
+```
+
+The last tweet Trump sent from his Android was a LinkedIn workforce report that was positive news for the first two months of his presidency. 
+
+```{r}
+
+```
+
+
 ```{r}
 library(stringr)
 library(lubridate)
