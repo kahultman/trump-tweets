@@ -43,7 +43,7 @@ new_trump_tweet <- tbl_df(map_df(new_trump_tweet, as.data.frame))
 
 # Check if there are new tweets
 
-load("trump_tweets.Rdata")
+load("../data/trump_tweets.Rdata")
 new_trump_tweet <- new_trump_tweet %>% filter(!id %in% trump_tweets$id)
 
 if(nrow(new_trump_tweet)>0) {
@@ -60,7 +60,7 @@ if(nrow(new_trump_tweet)>0) {
     mutate(tod = hour(with_tz(created, tzone = "EST")))
   
   # Get sentiment
-  load("nrc_dummy.Rdata")
+  load("../data/nrc_dummy.Rdata")
   new_trump_sentiment <- new_trump_tweet %>%
     filter(!quote) %>% 
     unnest_tokens(output = word, input = text, token = "words") %>% 
@@ -75,7 +75,7 @@ if(nrow(new_trump_tweet)>0) {
     select(quote, picture, hashtag, dow, tod, starts_with("sentiment"), id, text)
   
   # load Naive Bayes model and make prediction
-  tweet_nb <- readRDS("tweet_nb.Rds")
+  tweet_nb <- readRDS("../data/tweet_nb.Rds")
   new_trump_sentiment$prediction <- predict(tweet_nb, newdata = new_trump_sentiment[,1:15])
 
   # Reply to tweets if predicted to be trump
@@ -94,10 +94,10 @@ if(nrow(new_trump_tweet)>0) {
   
   #save new tweets to file
   trump_tweets <- rbind(trump_tweets, new_trump_sentiment)  
-  save(trump_tweets, file = "trump_tweets.RData")
+  save(trump_tweets, file = "../data/trump_tweets.RData")
 
 } else {
   print("There were no new tweets")
 }
 
-
+rm(list = ls(all=TRUE))

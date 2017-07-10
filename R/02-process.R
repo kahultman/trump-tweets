@@ -1,6 +1,6 @@
 # Process data
 
-load("alltweets.Rda")
+load("../data/alltweets.Rda")
 
 library(stringr)
 library(lubridate)
@@ -31,7 +31,7 @@ nrc_dummy <- dummyVars(~sentiment, data = nrc, sep = ".", levelsOnly = TRUE)
 nrc_dummy <- as.data.frame(predict(nrc_dummy, newdata = nrc))
 nrc_dummy$word <- nrc$word 
 
-save(nrc_dummy, file = "nrc_dummy.Rdata")
+save(nrc_dummy, file = "../data/nrc_dummy.Rdata")
 
 # Tidy the tweets - one word per line
 tidy_tweet <- tweet_words %>% unnest_tokens(output = word, input = text, token = "words")
@@ -57,39 +57,9 @@ alltweets2[is.na(alltweets2)] <- 0
 future <- alltweets2 %>% 
   filter(date.time > "2017-03-08") %>% 
   select(-source, -created)
-save(future, file = "future.Rdata")
 
-train_tweet <- alltweets2 %>% 
-  filter(date.time < "2017-03-08") %>% 
-  mutate(trump = as.factor(if_else(source == "Android", true = "trump", false = "not trump"))) %>% 
-  select(-source, -created, -date.time)
+# Save Files
 
-# Create Bag of Words
-library(tm)
-library(SnowballC)
+save(future, file = "../data/future.Rdata")
+save(alltweets2, file = "../data/alltweets-processed.Rdata")
 
-tweet_corpus <- VCorpus(VectorSource(train_tweet$text))
-
-tweet_corpus_clean <- tm_map(tweet_corpus, content_transformer(tolower)) %>% 
-  tm_map(removeNumbers) %>% 
-  tm_map(removeWords, stopwords()) %>% 
-  tm_map(removePunctuation) %>% 
-  tm_map(stemDocument) %>% 
-  tm_map(stripWhitespace)
-
-tweet_dtm <- DocumentTermMatrix(tweet_corpus_clean)
-# filter out infrequent words
-tweet_freq_words <- findFreqTerms(tweet_dtm, lowfreq = 5)
-tweet_dtm <- tweet_dtm[, tweet_freq_words]
-
-# Split into training and test sets
-
-set.seed(45)
-in_training <- createDataPartition(train_tweet$trump, times = 1, p = 0.8, list = FALSE)
-tweet_test <- train_tweet[-in_training,] 
-tweet_train <- train_tweet[in_training,] 
-tweet_dtm_test <- tweet_dtm[-in_training,]
-tweet_dtm_train <- tweet_dtm[in_training,]
-
-save(tweet_train, file = "tweet_train.Rdata")
-save(tweet_test, file = "tweet_test.Rdata")
