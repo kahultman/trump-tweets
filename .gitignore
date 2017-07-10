@@ -1,14 +1,8 @@
 .Rproj.user
 .Rhistory
 .RData
-*.Rdata
-*.Rda
-*.RData
 .Ruserdata
 .httr-oauth
 twitterauth.R
 *.html
-*.Rds
-*.json
-*.csv
 *.log
