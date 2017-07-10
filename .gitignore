@@ -10,3 +10,4 @@ twitterauth.R
 *.html
 *.Rds
 *.json
+*.csv
