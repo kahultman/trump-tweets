@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rapp.history
 .httr-oauth
 twitterauth.R
 *.html
