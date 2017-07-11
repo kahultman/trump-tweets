@@ -1,10 +1,10 @@
 # packages
 library(stringr)
-library(lubridate)
-library(tidyverse)
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(tidyverse))
 library(purrr)
 library(purrrlyr)
-library(twitteR)
+suppressPackageStartupMessages(library(twitteR))
 library(tidytext)
 library(e1071)
 
@@ -43,6 +43,9 @@ new_trump_tweet <- tbl_df(map_df(new_trump_tweet, as.data.frame))
 
 # Check if there are new tweets
 
+print(Sys.time())
+print("Checking twitter feed... ")
+
 load("../data/trump_tweets.Rdata")
 new_trump_tweet <- new_trump_tweet %>% filter(!id %in% trump_tweets$id)
 
@@ -67,8 +70,11 @@ if(nrow(new_trump_tweet)>0) {
     inner_join(nrc_dummy) %>% 
     group_by(id) %>% 
     summarise_each(funs(max),starts_with("sentiment")) %>% 
-    right_join(new_trump_tweet, by = "id") %>% 
-    mutate_all(funs(replace(.,is.na(.), 0))) %>% 
+    right_join(new_trump_tweet, by = "id") 
+  
+  new_trump_sentiment[is.na(new_trump_sentiment)] <- 0
+  
+  new_trump_sentiment <- new_trump_sentiment %>%  
     mutate_each(funs(convert_counts), starts_with("sentiment")) %>% 
     select(quote, picture, hashtag, dow, tod, starts_with("sentiment"), id, text)
   
