@@ -72,9 +72,11 @@ if(nrow(new_trump_tweet)>0) {
     summarise_each(funs(max),starts_with("sentiment")) %>% 
     right_join(new_trump_tweet, by = "id") 
   
+  # Clean up data
   new_trump_sentiment[is.na(new_trump_sentiment)] <- 0
   
-  new_trump_sentiment <- new_trump_sentiment %>%  
+  new_trump_sentiment <- new_trump_sentiment %>% 
+    mutate(tod = factor(tod, c(1:23))) %>%  
     mutate_each(funs(convert_counts), starts_with("sentiment")) %>% 
     select(quote, picture, hashtag, dow, tod, starts_with("sentiment"), id, text)
   
