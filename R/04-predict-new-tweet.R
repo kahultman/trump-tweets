@@ -69,7 +69,7 @@ if(nrow(new_trump_tweet)>0) {
     unnest_tokens(output = word, input = text, token = "words") %>% 
     inner_join(nrc_dummy) %>% 
     group_by(id) %>% 
-    summarise_each(funs(max),starts_with("sentiment")) %>% 
+    summarise_at(vars(starts_with("sentiment")), max) %>% 
     right_join(new_trump_tweet, by = "id") 
   
   # Clean up data
@@ -77,7 +77,7 @@ if(nrow(new_trump_tweet)>0) {
   
   new_trump_sentiment <- new_trump_sentiment %>% 
     mutate(tod = factor(tod, c(1:23))) %>%  
-    mutate_each(funs(convert_counts), starts_with("sentiment")) %>% 
+    mutate_at(vars(starts_with("sentiment")), convert_counts) %>% 
     select(quote, picture, hashtag, dow, tod, starts_with("sentiment"), id, text)
   
   # load Naive Bayes model and make prediction
