@@ -13,12 +13,12 @@ get_response <- function() {
   response_list <- c("Yep, this is me.", 
                    "Can you believe I'm president?", 
                    "Hold my beer...", 
-                   "Big league", 
+                   "Big league,", 
                    "SAD!", 
                    "It's really me, I think...",
-                   "Me again",
-                   "I'm Donald Trump, and I approved this message:",
-                   "Not my staff, I swear")
+                   "Me again,",
+                   "I'm Donald Trump, and I approved this message.",
+                   "Not my staff, I swear.")
 
   randomnum <- sample(1:6, 1)
   response <- paste(response_list[randomnum], "@realDonaldTrump", sep = " ")
@@ -83,6 +83,8 @@ if(nrow(new_trump_tweet)>0) {
   # load Naive Bayes model and make prediction
   tweet_nb <- readRDS("../data/tweet_nb.Rds")
   new_trump_sentiment$prediction <- predict(tweet_nb, newdata = new_trump_sentiment[,1:15])
+  posterior <- predict(tweet_nb, newdata = new_trump_sentiment[,1:15], type = "raw")
+  new_trump_sentiment$probability <- posterior[,2]
 
   # Reply to tweets if predicted to be trump
   # Really hate using a loop, but not sure how to execute the function otherwise
@@ -94,7 +96,10 @@ if(nrow(new_trump_tweet)>0) {
   
   if(nrow(replytweets) > 0){
     for(n in 1:nrow(replytweets)){
-      updateStatus(text = get_response(), inReplyTo = replytweets$id[n])
+      text1 <- get_response()
+      text2 <- paste("Probability of Trump:", round(replytweets$probability[n], digits = 2), sep = " ")
+      response <- paste(text1, text2, sep = " ")
+      updateStatus(text = response, inReplyTo = replytweets$id[n])
     }
   }
   
