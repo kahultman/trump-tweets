@@ -106,7 +106,7 @@ if(nrow(new_trump_tweet)>0) {
   #save new tweets to file
   trump_tweets <- rbind(trump_tweets, new_trump_sentiment)  
   save(trump_tweets, file = "../data/trump_tweets.RData")
-
+  write_csv(new_trump_sentiment, path = "../data/trump_tweets.csv", append = TRUE)
 } else {
   print("There were no new tweets")
 }
