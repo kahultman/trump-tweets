@@ -18,9 +18,12 @@ get_response <- function() {
                    "It's really me, I think...",
                    "Me again,",
                    "I'm Donald Trump, and I approved this message.",
-                   "Not my staff, I swear.")
+                   "Not my staff, I swear.",
+                   "Great crowd!",
+                   "So presidential!",
+                   "Fake News!!")
 
-  randomnum <- sample(1:6, 1)
+  randomnum <- sample(1:length(response_list), 1)
   response <- paste(response_list[randomnum], "@realDonaldTrump", sep = " ")
 }
 
